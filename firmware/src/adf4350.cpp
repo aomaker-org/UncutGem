@@ -106,7 +106,6 @@ void ADF4350::setFreq(int freq){
     } else{
         _int = _freq*multiplier/_refClk;
     } */
-    //ADF4350::update();
 }
 
 
