@@ -255,7 +255,6 @@ void ADF4350::send_sweep(){
       }
       ADF4350::writeRegister(tmp);
     }
-    // delayMicroseconds(500);
     delay(1);
     int ADC_out = ADF4350::get_avg_ADC();
     // ok now take some readings and print them to Serial
@@ -274,8 +273,6 @@ int ADF4350::send_sweep_step(int i){
       }
       ADF4350::writeRegister(tmp);
     }
-    // delayMicroseconds(5);
-    // delayMicroseconds(500);
     delay(1);
     int ADC_out = ADF4350::get_avg_ADC();
     // Serial.println(ADC_out);
