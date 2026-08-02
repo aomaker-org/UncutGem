@@ -26,8 +26,8 @@
 
 
 
-// NOTE: Currently, set up for channel spacing of 10Mhz; might ammend later if needed,
-//  but this was easy and takes care of forseeable applications...
+// NOTE: Currently, set up for channel spacing of 10Mhz; might amend later if needed,
+//  but this was easy and takes care of foreseeable applications...
 //  This means we'll be operating in int-N mode.
 //  
 //  Currently, keep frequency between 140Mhz and 3Ghz.
