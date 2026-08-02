@@ -233,11 +233,7 @@ void ADF4350::send_2870(){
                         {1, 0x00, 0x00, 0x80, 0x29},
                         {0, 0x00, 0x72, 0x80, 0x18}};
   for(int i = 0; i < 6; i++){
-    byte tmp[4]; // this isn't necessary, it's just testing for the below. -MC
-    for(int j = 0; j < 4; j++){
-      tmp[j] = dataArr[i][j+1];
-    }
-    ADF4350::writeRegister(tmp);
+    ADF4350::writeRegister(&dataArr[i][1]);
   }
 }
 
@@ -249,11 +245,7 @@ void ADF4350::send_sweep(){
       if (sweepArr[i][j][0] == 6) {
         continue; // skip this register...
       }
-      byte tmp[4];
-      for(int s = 0; s < 4; s++){
-        tmp[s] = sweepArr[i][j][s+1];
-      }
-      ADF4350::writeRegister(tmp);
+      ADF4350::writeRegister(&sweepArr[i][j][1]);
     }
     // delayMicroseconds(500);
     delay(1);
@@ -268,11 +260,7 @@ int ADF4350::send_sweep_step(int i){
       if (sweepArr[i][j][0] == 6) {
         continue; // skip this register...
       }
-      byte tmp[4];
-      for(int s = 0; s < 4; s++){
-        tmp[s] = sweepArr[i][j][s+1];
-      }
-      ADF4350::writeRegister(tmp);
+      ADF4350::writeRegister(&sweepArr[i][j][1]);
     }
     // delayMicroseconds(5);
     // delayMicroseconds(500);
