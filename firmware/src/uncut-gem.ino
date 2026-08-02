@@ -1,5 +1,6 @@
 #include <SPI.h>
 #include <ADF4350.h>
+#include "calibration.h"
 
 #define LED_PIN 2
 
@@ -86,6 +87,11 @@ void loop() {
   }
 }
 
+// wrapper function for calibration since perform_calibration takes a function pointer
+int pll_sweep_cb(int i) {
+    return PLL.send_sweep_step(i);
+}
+
 void calibrate(){
   // warm up the microwave generator and it's gain stage,
   // then characterize it and calibrate the values for scaling for display.
@@ -96,36 +102,24 @@ void calibrate(){
     display.println("Calibrating...");
     display.display();
   }
-  int ctr = 0;
-  int cum_avg = 0;
-  int max_ca = 0;
-  do{ // warm-up run
-    for(int i = 0; i < 128; i++){
-      int ADC_out = PLL.send_sweep_step(i);
-    }
-    ctr++;
-  } while(ctr < CALIBRATION_COUNT);
-  ctr = 0;
-  do {
-    int cum_avg = 0;
-    for(int i = 0; i < 128; i++){
-      int ADC_out = PLL.send_sweep_step(i);
-      cum_avg += ADC_out;
-      if (ADC_out > MAXVAL_ADC){
-        MAXVAL_ADC = ADC_out;
-      }
-      if (ADC_out < MINVAL_ADC && ADC_out > 1100){ 
-        // reduce it, but not below 1.1V...
-        MINVAL_ADC = ADC_out-25;
-      }
-    }
-    ctr++;
-    cum_avg /= 128;
-    if (cum_avg < CUM_PLOT_SCALE) {CUM_PLOT_SCALE = cum_avg + 25;}
-    if (cum_avg > max_ca) {max_ca = cum_avg;}
-  } while(ctr < CALIBRATION_COUNT);
-  CUM_PLOT_DIV = ((max_ca - CUM_PLOT_SCALE) / 25) + 2;
-  VAL_DIV = (MAXVAL_ADC - MINVAL_ADC)/40; 
+
+  CalibrationState state;
+  state.MINVAL_ADC = MINVAL_ADC;
+  state.MAXVAL_ADC = MAXVAL_ADC;
+  state.CUM_PLOT_SCALE = CUM_PLOT_SCALE;
+  state.CUM_PLOT_DIV = CUM_PLOT_DIV;
+  state.VAL_DIV = VAL_DIV;
+  state.CALIBRATION_COUNT = CALIBRATION_COUNT;
+
+  perform_calibration(&state, pll_sweep_cb);
+
+  MINVAL_ADC = state.MINVAL_ADC;
+  MAXVAL_ADC = state.MAXVAL_ADC;
+  CUM_PLOT_SCALE = state.CUM_PLOT_SCALE;
+  CUM_PLOT_DIV = state.CUM_PLOT_DIV;
+  VAL_DIV = state.VAL_DIV;
+  CALIBRATION_COUNT = state.CALIBRATION_COUNT;
+
   if (screen){
     display.clearDisplay();
   }
