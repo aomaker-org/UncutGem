@@ -21,13 +21,13 @@
 
 #include "Arduino.h"
 #include "SPI.h"
-#include <ADF4350.h>
-#include <sweep_array.h>
+#include "adf4350.h"
+#include "sweep_array.h"
 
 
 
-// NOTE: Currently, set up for channel spacing of 10Mhz; might ammend later if needed,
-//  but this was easy and takes care of forseeable applications...
+// NOTE: Currently, set up for channel spacing of 10Mhz; might amend later if needed,
+//  but this was easy and takes care of foreseeable applications...
 //  This means we'll be operating in int-N mode.
 //  
 //  Currently, keep frequency between 140Mhz and 3Ghz.
@@ -68,7 +68,6 @@ void ADF4350::init(int freq, int refClk = 10){
 
 
     ADF4350::setFreq(freq);
-    // ADF4350::update();
 }
 
 // gets current frequency setting
@@ -106,7 +105,6 @@ void ADF4350::setFreq(int freq){
     } else{
         _int = _freq*multiplier/_refClk;
     } */
-    //ADF4350::update();
 }
 
 
@@ -146,7 +144,7 @@ void ADF4350::rfEnable(bool rf){
 
 // CAREFUL!!!! pow must be 0, 1, 2, or 3... corresponding to -4, -1, 3, 5 dbm.
 void ADF4350::setRfPower(int pow){
-    _rfPower = pow;
+    _rfPower = pow & 0x03;
     ADF4350::setR4();
     ADF4350::update();
 }
@@ -159,7 +157,7 @@ void ADF4350::auxEnable(bool aux){
 
 // CAREFUL!!!! pow must be 0, 1, 2, or 3... corresponding to -4, -1, 3, 5 dbm.
 void ADF4350::setAuxPower(int pow){
-    _auxPower = pow;
+    _auxPower = pow & 0x03;
     ADF4350::setR4();
     ADF4350::update();
 }
@@ -233,11 +231,7 @@ void ADF4350::send_2870(){
                         {1, 0x00, 0x00, 0x80, 0x29},
                         {0, 0x00, 0x72, 0x80, 0x18}};
   for(int i = 0; i < 6; i++){
-    byte tmp[4]; // this isn't necessary, it's just testing for the below. -MC
-    for(int j = 0; j < 4; j++){
-      tmp[j] = dataArr[i][j+1];
-    }
-    ADF4350::writeRegister(tmp);
+    ADF4350::writeRegister(&dataArr[i][1]);
   }
 }
 
@@ -249,13 +243,8 @@ void ADF4350::send_sweep(){
       if (sweepArr[i][j][0] == 6) {
         continue; // skip this register...
       }
-      byte tmp[4];
-      for(int s = 0; s < 4; s++){
-        tmp[s] = sweepArr[i][j][s+1];
-      }
-      ADF4350::writeRegister(tmp);
+      ADF4350::writeRegister((byte*)&sweepArr[i][j][1]);
     }
-    // delayMicroseconds(500);
     delay(1);
     int ADC_out = ADF4350::get_avg_ADC();
     // ok now take some readings and print them to Serial
@@ -268,14 +257,8 @@ int ADF4350::send_sweep_step(int i){
       if (sweepArr[i][j][0] == 6) {
         continue; // skip this register...
       }
-      byte tmp[4];
-      for(int s = 0; s < 4; s++){
-        tmp[s] = sweepArr[i][j][s+1];
-      }
-      ADF4350::writeRegister(tmp);
+      ADF4350::writeRegister((byte*)&sweepArr[i][j][1]);
     }
-    // delayMicroseconds(5);
-    // delayMicroseconds(500);
     delay(1);
     int ADC_out = ADF4350::get_avg_ADC();
     // Serial.println(ADC_out);
@@ -287,7 +270,11 @@ int ADF4350::get_avg_ADC(){
     int count = 6;
     for(int i = 0; i < count; i++){
       int val = analogReadMilliVolts(_ADCpin);
-      while(val > MAXVAL){val = analogReadMilliVolts(_ADCpin);}
+      int retries = 0;
+      while(val > MAXVAL && retries < 100){
+        val = analogReadMilliVolts(_ADCpin);
+        retries++;
+      }
       output += val;
     }
     return output / count;

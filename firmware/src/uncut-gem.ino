@@ -56,7 +56,6 @@ void setup(){
   PLL.send_2870();
   digitalWrite(LED_PIN, LOW);
   delay(2000);
-  //PLL.send_sweep();
   calibrate();
 }
 
@@ -72,7 +71,6 @@ void loop() {
       display.drawLine(i, display.height(), i, 25, SH110X_BLACK); // clear the existing line
       int display_val = (((ADC_out - MINVAL_ADC )/ VAL_DIV) + prev_val)/2; // interpolate the previous value
       display.drawLine(i, display.height(), i, display.height() - min(display_val, 40), SH110X_WHITE);
-      display.display();
       cum_avg += ADC_out;
       prev_val = display_val; // using this prev_val gives some interpolation to make the graph clearer
     }
@@ -80,6 +78,7 @@ void loop() {
   }
 #ifdef USE_SCREEN
   {
+    display.display();
     cum_avg /= 128;
     // do a small 25px cumulative average plot
     if (cum_ctr > 127){ cum_ctr = 0; display.fillRect(0, 0, 128, 64, SH110X_BLACK);}
@@ -88,7 +87,6 @@ void loop() {
     dot_val = (dot_val - PT_OFFSET) * 1.5;
     display.drawPixel(cum_ctr, dot_val, SH110X_WHITE);
     display.display();
-    // Serial.println(scaled_val);
     cum_ctr++;
   }
 #endif
@@ -136,6 +134,9 @@ void calibrate(){
   } while(ctr < CALIBRATION_COUNT);
   CUM_PLOT_DIV = ((max_ca - CUM_PLOT_SCALE) / 25) + 2;
   VAL_DIV = (MAXVAL_ADC - MINVAL_ADC)/40; 
+  if (VAL_DIV < 1) {
+    VAL_DIV = 1;
+  }
 #ifdef USE_SCREEN
   {
     display.clearDisplay();
