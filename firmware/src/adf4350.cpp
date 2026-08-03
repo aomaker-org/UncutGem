@@ -68,7 +68,6 @@ void ADF4350::init(int freq, int refClk = 10){
 
 
     ADF4350::setFreq(freq);
-    // ADF4350::update();
 }
 
 // gets current frequency setting
@@ -106,7 +105,6 @@ void ADF4350::setFreq(int freq){
     } else{
         _int = _freq*multiplier/_refClk;
     } */
-    //ADF4350::update();
 }
 
 
