@@ -126,6 +126,9 @@ void calibrate(){
   } while(ctr < CALIBRATION_COUNT);
   CUM_PLOT_DIV = ((max_ca - CUM_PLOT_SCALE) / 25) + 2;
   VAL_DIV = (MAXVAL_ADC - MINVAL_ADC)/40; 
+  if (VAL_DIV < 1) {
+    VAL_DIV = 1;
+  }
   if (screen){
     display.clearDisplay();
   }
