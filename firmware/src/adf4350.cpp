@@ -146,7 +146,7 @@ void ADF4350::rfEnable(bool rf){
 
 // CAREFUL!!!! pow must be 0, 1, 2, or 3... corresponding to -4, -1, 3, 5 dbm.
 void ADF4350::setRfPower(int pow){
-    _rfPower = pow;
+    _rfPower = pow & 0x03;
     ADF4350::setR4();
     ADF4350::update();
 }
@@ -159,7 +159,7 @@ void ADF4350::auxEnable(bool aux){
 
 // CAREFUL!!!! pow must be 0, 1, 2, or 3... corresponding to -4, -1, 3, 5 dbm.
 void ADF4350::setAuxPower(int pow){
-    _auxPower = pow;
+    _auxPower = pow & 0x03;
     ADF4350::setR4();
     ADF4350::update();
 }
