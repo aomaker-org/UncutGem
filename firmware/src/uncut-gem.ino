@@ -80,7 +80,6 @@ void loop() {
     dot_val = (dot_val - PT_OFFSET) * 1.5;
     display.drawPixel(cum_ctr, dot_val, SH110X_WHITE);
     display.display();
-    // Serial.println(scaled_val);
     cum_ctr++;
   }
 }
