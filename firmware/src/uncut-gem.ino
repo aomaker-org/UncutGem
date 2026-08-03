@@ -52,7 +52,6 @@ void setup(){
   PLL.send_2870();
   digitalWrite(LED_PIN, LOW);
   delay(2000);
-  //PLL.send_sweep();
   calibrate();
 }
 
