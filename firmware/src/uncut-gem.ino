@@ -27,16 +27,20 @@ int PT_OFFSET = 7;
 int prev_val = 0;
 int cum_ctr = 0; // cumulative counter
 
-bool screen = true;
-// if the above line is set to 'false' then comment out this next line... -MC
+#define USE_SCREEN 1
+
+#ifdef USE_SCREEN
 Adafruit_SH1106G display = Adafruit_SH1106G(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
+#endif
 
 void setup(){
   delay(250); // wait for the OLED to power up
-  if (screen){
+#ifdef USE_SCREEN
+  {
     display.begin(i2c_Address, true); // Address 0x3C default
     display.clearDisplay();
   }
+#endif
   pinMode(LED_PIN, OUTPUT);
   digitalWrite(LED_PIN, HIGH);
   Serial.begin(115200) ;
@@ -61,7 +65,8 @@ void loop() {
   for(int i = 0; i < 128; i++){
     int ADC_out = PLL.send_sweep_step(i);
     Serial.println(ADC_out);
-    if (screen){
+#ifdef USE_SCREEN
+    {
       // display.drawLine(display.width() - 1, 0, i, display.height() - 1, SH110X_WHITE);
       display.drawLine(i, display.height(), i, 25, SH110X_BLACK); // clear the existing line
       int display_val = (((ADC_out - MINVAL_ADC )/ VAL_DIV) + prev_val)/2; // interpolate the previous value
@@ -69,11 +74,11 @@ void loop() {
       cum_avg += ADC_out;
       prev_val = display_val; // using this prev_val gives some interpolation to make the graph clearer
     }
+#endif
   }
-  if (screen){
+#ifdef USE_SCREEN
+  {
     display.display();
-  }
-  if (screen){
     cum_avg /= 128;
     // do a small 25px cumulative average plot
     if (cum_ctr > 127){ cum_ctr = 0; display.fillRect(0, 0, 128, 64, SH110X_BLACK);}
@@ -84,18 +89,21 @@ void loop() {
     display.display();
     cum_ctr++;
   }
+#endif
 }
 
 void calibrate(){
   // warm up the microwave generator and it's gain stage,
   // then characterize it and calibrate the values for scaling for display.
-  if (screen){
+#ifdef USE_SCREEN
+  {
     display.setTextSize(1);
     display.setTextColor(SH110X_WHITE);
     display.setCursor(2, 2);
     display.println("Calibrating...");
     display.display();
   }
+#endif
   int ctr = 0;
   int cum_avg = 0;
   int max_ca = 0;
@@ -129,7 +137,9 @@ void calibrate(){
   if (VAL_DIV < 1) {
     VAL_DIV = 1;
   }
-  if (screen){
+#ifdef USE_SCREEN
+  {
     display.clearDisplay();
   }
+#endif
 }
