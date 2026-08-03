@@ -66,10 +66,12 @@ void loop() {
       display.drawLine(i, display.height(), i, 25, SH110X_BLACK); // clear the existing line
       int display_val = (((ADC_out - MINVAL_ADC )/ VAL_DIV) + prev_val)/2; // interpolate the previous value
       display.drawLine(i, display.height(), i, display.height() - min(display_val, 40), SH110X_WHITE);
-      display.display();
       cum_avg += ADC_out;
       prev_val = display_val; // using this prev_val gives some interpolation to make the graph clearer
     }
+  }
+  if (screen){
+    display.display();
   }
   if (screen){
     cum_avg /= 128;
