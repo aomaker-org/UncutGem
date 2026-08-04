@@ -1,3 +1,9 @@
 .DS_Store
 test-site/*
 webpage_maker.py
+
+# Build artifacts
+*.o
+firmware/test/run_tests
+firmware/test/run_adc_tests
+firmware/test/run_calibration_tests
