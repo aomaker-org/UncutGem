@@ -1,5 +1,6 @@
 #include <SPI.h>
-#include <ADF4350.h>
+#include "adf4350.h"
+#include "calibration.h"
 
 #define LED_PIN 2
 
@@ -27,16 +28,20 @@ int PT_OFFSET = 7;
 int prev_val = 0;
 int cum_ctr = 0; // cumulative counter
 
-bool screen = true;
-// if the above line is set to 'false' then comment out this next line... -MC
+#define USE_SCREEN 1
+
+#ifdef USE_SCREEN
 Adafruit_SH1106G display = Adafruit_SH1106G(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
+#endif
 
 void setup(){
   delay(250); // wait for the OLED to power up
-  if (screen){
+#ifdef USE_SCREEN
+  {
     display.begin(i2c_Address, true); // Address 0x3C default
     display.clearDisplay();
   }
+#endif
   pinMode(LED_PIN, OUTPUT);
   digitalWrite(LED_PIN, HIGH);
   Serial.begin(115200) ;
@@ -52,7 +57,6 @@ void setup(){
   PLL.send_2870();
   digitalWrite(LED_PIN, LOW);
   delay(2000);
-  //PLL.send_sweep();
   calibrate();
 }
 
@@ -62,17 +66,20 @@ void loop() {
   for(int i = 0; i < 128; i++){
     int ADC_out = PLL.send_sweep_step(i);
     Serial.println(ADC_out);
-    if (screen){
+#ifdef USE_SCREEN
+    {
       // display.drawLine(display.width() - 1, 0, i, display.height() - 1, SH110X_WHITE);
       display.drawLine(i, display.height(), i, 25, SH110X_BLACK); // clear the existing line
       int display_val = (((ADC_out - MINVAL_ADC )/ VAL_DIV) + prev_val)/2; // interpolate the previous value
       display.drawLine(i, display.height(), i, display.height() - min(display_val, 40), SH110X_WHITE);
-      display.display();
       cum_avg += ADC_out;
       prev_val = display_val; // using this prev_val gives some interpolation to make the graph clearer
     }
+#endif
   }
-  if (screen){
+#ifdef USE_SCREEN
+  {
+    display.display();
     cum_avg /= 128;
     // do a small 25px cumulative average plot
     if (cum_ctr > 127){ cum_ctr = 0; display.fillRect(0, 0, 128, 64, SH110X_BLACK);}
@@ -81,52 +88,49 @@ void loop() {
     dot_val = (dot_val - PT_OFFSET) * 1.5;
     display.drawPixel(cum_ctr, dot_val, SH110X_WHITE);
     display.display();
-    // Serial.println(scaled_val);
     cum_ctr++;
   }
+#endif
+}
+
+// wrapper function for calibration since perform_calibration takes a function pointer
+int pll_sweep_cb(int i) {
+    return PLL.send_sweep_step(i);
 }
 
 void calibrate(){
   // warm up the microwave generator and it's gain stage,
   // then characterize it and calibrate the values for scaling for display.
-  if (screen){
+#ifdef USE_SCREEN
+  {
     display.setTextSize(1);
     display.setTextColor(SH110X_WHITE);
     display.setCursor(2, 2);
     display.println("Calibrating...");
     display.display();
   }
-  int ctr = 0;
-  int cum_avg = 0;
-  int max_ca = 0;
-  do{ // warm-up run
-    for(int i = 0; i < 128; i++){
-      int ADC_out = PLL.send_sweep_step(i);
-    }
-    ctr++;
-  } while(ctr < CALIBRATION_COUNT);
-  ctr = 0;
-  do {
-    int cum_avg = 0;
-    for(int i = 0; i < 128; i++){
-      int ADC_out = PLL.send_sweep_step(i);
-      cum_avg += ADC_out;
-      if (ADC_out > MAXVAL_ADC){
-        MAXVAL_ADC = ADC_out;
-      }
-      if (ADC_out < MINVAL_ADC && ADC_out > 1100){ 
-        // reduce it, but not below 1.1V...
-        MINVAL_ADC = ADC_out-25;
-      }
-    }
-    ctr++;
-    cum_avg /= 128;
-    if (cum_avg < CUM_PLOT_SCALE) {CUM_PLOT_SCALE = cum_avg + 25;}
-    if (cum_avg > max_ca) {max_ca = cum_avg;}
-  } while(ctr < CALIBRATION_COUNT);
-  CUM_PLOT_DIV = ((max_ca - CUM_PLOT_SCALE) / 25) + 2;
-  VAL_DIV = (MAXVAL_ADC - MINVAL_ADC)/40; 
-  if (screen){
+#endif
+
+  CalibrationState state;
+  state.MINVAL_ADC = MINVAL_ADC;
+  state.MAXVAL_ADC = MAXVAL_ADC;
+  state.CUM_PLOT_SCALE = CUM_PLOT_SCALE;
+  state.CUM_PLOT_DIV = CUM_PLOT_DIV;
+  state.VAL_DIV = VAL_DIV;
+  state.CALIBRATION_COUNT = CALIBRATION_COUNT;
+
+  perform_calibration(&state, pll_sweep_cb);
+
+  MINVAL_ADC = state.MINVAL_ADC;
+  MAXVAL_ADC = state.MAXVAL_ADC;
+  CUM_PLOT_SCALE = state.CUM_PLOT_SCALE;
+  CUM_PLOT_DIV = state.CUM_PLOT_DIV;
+  VAL_DIV = state.VAL_DIV;
+  CALIBRATION_COUNT = state.CALIBRATION_COUNT;
+
+#ifdef USE_SCREEN
+  {
     display.clearDisplay();
   }
+#endif
 }
