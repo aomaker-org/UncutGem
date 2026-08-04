@@ -23,6 +23,7 @@
 #include "SPI.h"
 #include "adf4350.h"
 #include "sweep_array.h"
+#include "adc_utils.h"
 
 
 
@@ -266,19 +267,14 @@ int ADF4350::send_sweep_step(int i){
 }
 
 int ADF4350::get_avg_ADC(){
-    int output = 0;
-    int count = 6;
-    for(int i = 0; i < count; i++){
-      int val = analogReadMilliVolts(_ADCpin);
-      int retries = 0;
-      while(val > MAXVAL && retries < 100){
-        delay(1);
-        val = analogReadMilliVolts(_ADCpin);
-        retries++;
-      }
-      output += val;
-    }
-    return output / count;
+    return get_avg_adc_decoupled(
+        _ADCpin,
+        MAXVAL,
+        100,
+        6,
+        [](unsigned char pin) -> int { return analogReadMilliVolts(pin); },
+        [](unsigned long ms) -> void { delay(ms); }
+    );
 }
 
 
