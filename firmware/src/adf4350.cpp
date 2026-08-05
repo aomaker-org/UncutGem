@@ -285,9 +285,17 @@ int ADF4350::send_sweep_step(int i){
 int ADF4350::get_avg_ADC(){
     int output = 0;
     int count = 6;
+    int max_retries = 10;
     for(int i = 0; i < count; i++){
       int val = analogReadMilliVolts(_ADCpin);
-      while(val > MAXVAL){val = analogReadMilliVolts(_ADCpin);}
+      int retries = 0;
+      while(val > MAXVAL && retries < max_retries){
+          val = analogReadMilliVolts(_ADCpin);
+          retries++;
+      }
+      if (val > MAXVAL) {
+          val = MAXVAL;
+      }
       output += val;
     }
     return output / count;
