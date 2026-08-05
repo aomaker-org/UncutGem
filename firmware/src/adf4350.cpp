@@ -274,6 +274,7 @@ int ADF4350::get_avg_ADC(){
       while(val > MAXVAL && retries < 100){
         val = analogReadMilliVolts(_ADCpin);
         retries++;
+        delay(1);
       }
       output += val;
     }
