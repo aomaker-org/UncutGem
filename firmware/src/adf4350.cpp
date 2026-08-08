@@ -21,7 +21,7 @@
 
 #include "Arduino.h"
 #include "SPI.h"
-#include <ADF4350.h>
+#include "adf4350.h"
 #include <sweep_array.h>
 
 
